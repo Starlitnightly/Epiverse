@@ -1,9 +1,18 @@
 import pandas as pd
 import numpy as np
 import anndata as ad
-
+import gc
 def atac_concat_get_index(adata1,adata2):
-  import gc
+  """
+    将adata1和adata2进行处理，计算并返回pair_index
+
+    参数:
+    adata1: 第一个数据集
+    adata2: 第二个数据集
+
+    返回:
+    pair_index: 包含计算结果的DataFrame
+  """
 
   # 数据预处理
   adata1.var.loc[:,'ATAC'] = adata1.var.index
@@ -81,8 +90,8 @@ def atac_concat_get_index(adata1,adata2):
           right = midIndex-1
         else:
           Length = target_End - target_Start
-          ATAC[x].loc[:,'overleaf_1'].iloc[midIndex] = (target_Start - midValue_End)/Length
-          ATAC[x].loc[:,'overleaf_2'].iloc[midIndex] = (midValue_Start - target_End)/Length
+          ATAC[x].loc[:,'overleaf_1'].iloc[midIndex] = (midValue_End - target_Start)/Length
+          ATAC[x].loc[:,'overleaf_2'].iloc[midIndex] = (target_End - midValue_Start)/Length 
           list = [midValue_Start,midValue_End,target_Start,target_End]
           ATAC[x].loc[:,'chromStart_New'].iloc[midIndex] = min(list)
           ATAC[x].loc[:,'chromEnd_New'].iloc[midIndex] = max(list)
@@ -126,9 +135,26 @@ def atac_concat_get_index(adata1,adata2):
   gc.collect()
   return pair_index
 
-
 def atac_concat_inner(adata1,adata2,pair_index):
-  import gc
+  """
+    将经过处理的 adata1 和 adata2 进行进一步拼接，并返回拼接后的 adata_pair,inner为取交集。
+
+    参数:
+    adata1: 第一个数据集
+    adata2: 第二个数据集
+    pair_index: 包含计算结果的DataFrame，这是上一个函数atac_concat_get_index的返回值
+
+    返回:
+    adata_pair: 拼接后的数据集
+  """
+      
+  # 对原始数据进行覆盖，防止修改原始数据
+  adata_1 = adata1.copy()
+  adata_2 = adata2.copy()
+  adata1 = adata_1
+  adata2 = adata_2
+  del adata_1
+  del adata_2
 
   # 设置基本参数
   adata1.var.loc[:,'ATAC'] = adata1.var.index
@@ -161,6 +187,14 @@ def atac_concat_inner(adata1,adata2,pair_index):
     atac2_new.var = pair_index[pair_index['overleaf_1']!='retain']
     atac2_new.var.index = atac2_new.var.index_new
 
+
+  atac1_new.var_names_make_unique()
+  atac2_new.var_names_make_unique()
+  atac1_new.var_name = atac1_new.var.index
+  atac2_new.var_name = atac2_new.var.index
+  atac1_new = atac1_new[:,[i for i in atac1_new.var_name if '-' not in i]]
+  atac2_new = atac2_new[:,[i for i in atac2_new.var_name if '-' not in i]]
+
   # 配对
   adata_pair = ad.concat([atac1_new,atac2_new],axis=0,join='outer',fill_value=0)
   adata_pair.obs_names_make_unique()
@@ -168,8 +202,27 @@ def atac_concat_inner(adata1,adata2,pair_index):
   gc.collect()
   return adata_pair
 
+
 def atac_concat_outer(adata1,adata2,pair_index):
-  import gc
+  """
+    将经过处理的 adata1 和 adata2 进行进一步拼接，并返回拼接后的 adata_pair,outer为取并集。
+
+    参数:
+    adata1: 第一个数据集
+    adata2: 第二个数据集
+    pair_index: 包含计算结果的DataFrame，这是上一个函数atac_concat_get_index的返回值
+
+    返回:
+    adata_pair: 拼接后的数据集
+  """
+      
+  # 对原始数据进行覆盖，防止修改原始数据
+  adata_1 = adata1.copy()
+  adata_2 = adata2.copy()
+  adata1 = adata_1
+  adata2 = adata_2
+  del adata_1
+  del adata_2
 
     # 提取关键参数
   adata1.var.loc[:,'ATAC'] = adata1.var.index
@@ -231,10 +284,12 @@ def atac_concat_outer(adata1,adata2,pair_index):
   var_2.index = var_2.name
   adata2.var =var_2
   adata2.var_name = var_2.index
-
+  adata1.var_names_make_unique()
+  adata2.var_names_make_unique()
   adata_pair = ad.concat([adata1,adata2],axis=0,join='outer',fill_value=0)
   adata_pair.obs_names_make_unique()
-  adata_pair
+  adata_pair.var_name = adata_pair.var.index
+  adata_pair = adata_pair[:,[i for i in adata_pair.var_name if '-' not in i]]
 
   gc.collect()
   return adata_pair
