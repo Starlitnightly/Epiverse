@@ -8,11 +8,13 @@ def download_gene_annotation_file(download_file:str = ''):
     """
     _datasets = {
         'chm13v2.0_RefSeq_Liftoff_v4':'https://figshare.com/ndownloader/files/40628072',
+        'GRCH38.v44.basic.annotation':'https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.basic.annotation.gtf.gz'
     }
      
     for datasets_name in _datasets.keys():
         print('......Gene Annotation File download start:',datasets_name)
-        model_path = data_downloader(url=_datasets[datasets_name],path=os.path.join(download_file,'{}.gtf.gz'.format(datasets_name)),title=datasets_name)
+        model_path = data_downloader(url=_datasets[datasets_name],
+                                     path=os.path.join(download_file,'{}.gtf.gz'.format(datasets_name)),title=datasets_name)
     print('......Gene Annotation File download finished!')
 
 
