@@ -15,6 +15,7 @@ def cal_qc(adata:anndata.AnnData,
            fragments_tbi_file:str = '',
            Number_of_fragments_to_count:Union[int, float] = None,
            RefSeq_file:str = '',
+           n_tss:int = 3000,
            ):
     
     """
@@ -83,11 +84,62 @@ def cal_qc(adata:anndata.AnnData,
     new_features.rename(columns={'seqname': 'Chromosome', 'start': 'Start', 'end': 'End'}, inplace=True)
 
     print('......Calculate the TSS enrichment score')
-    tss = ac.tl.tss_enrichment(adata, n_tss=3000, features=new_features,random_state=666)
+    tss = ac.tl.tss_enrichment(adata, n_tss=n_tss, features=new_features,random_state=112)
 
     print('......Calculate QC metrics successfully')
-    return adata
+    return adata,tss
 
+def plot_tss(adata:anndata.AnnData,
+             figsize:tuple=(8,4)):
+    print('......Plot the distribution of the TSS score')
+    fig, axs = plt.subplots(1, 2, figsize=figsize)
+
+    p1 = sns.histplot(adata.obs, x="tss_score", ax=axs[0])
+    p1.set_title("Full range")
+
+    p2 = sns.histplot(
+        adata.obs,
+        x="tss_score",
+        binrange=(0, adata.obs["tss_score"].quantile(0.995)),
+        ax=axs[1],
+    )
+    p2.set_title("Up to 99.5% percentile")
+    plt.suptitle("Distribution of the TSS score")
+    plt.tight_layout()
+    return fig,axs
+
+def plot_nucleosome(adata:anndata.AnnData,
+                figsize:tuple=(8,4)):
+    print('......Plot Violin plots of nucleosome signal and TSS score.')
+    # These were identified by looking at the plots in this code cell before.
+    fig, axs = plt.subplots(1, 2, figsize=figsize)
+
+    # tss.score
+    p3 = sc.pl.violin(adata, "tss_score", show=False,ax=axs[0])
+    
+    # nucleosome signal
+    p4 = sc.pl.violin(adata, "nucleosome_signal", show=False,ax=axs[1])
+    plt.suptitle("Violin plots of nucleosome signal and TSS score")
+    plt.tight_layout()
+    return fig,axs
+
+def plot_fragment_counts(adata:anndata.AnnData,cmap='Blues',
+                            figsize:tuple=(8,4),**kwargs):
+    #fig, ax = plt.subplots(figsize=figsize)
+    plot_tss_max = adata.obs['tss_score'].quantile(0.995)
+    p5 = sns.jointplot(
+            data=adata[(adata.obs["tss_score"] < plot_tss_max)].obs,
+            x="log_total_fragment_counts",
+            y="tss_score",
+            color="black",
+            marker=".",
+            *kwargs
+    )
+    # Density plot including lines
+    p5.plot_joint(sns.kdeplot, fill=True, cmap=cmap, zorder=1, alpha=0.75)
+    p5.plot_joint(sns.kdeplot, color="black", zorder=2, alpha=0.75)
+    p5.figure.set_size_inches(figsize)
+    return p5
 
 
 def plot_qc(adata:anndata.AnnData,
