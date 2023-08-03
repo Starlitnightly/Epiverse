@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools", "wheel", "flit_core >=3.4,<4","Cython"]
+build-backend = "flit_core.buildapi"
+
+
+
+[project]
+name = "Epiverse"
+version = "0.0.1"
+description = "EpiVerse: A single pipeline for exploring the entire epigenomics universe"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Lei Hu", email = "1157269262@qq.com"},
+    {name = "Zehua Zeng", email = "starlitnightly@163.com"},
+]
+keywords = ["bioinformatics", "deep-learning", "single-cell", "ATAC-seq"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+dependencies = [
+    'omicverse>=1.4.13',
+    'muon>=0.1',
+]
+
+
+
+
+[project.urls]
+Github = 'https://github.com/DBinary/Epiverse'
+
+[tool.flit.sdist]
+exclude = [".*", "d*", "e*", "pa*", "s*", "t*"]
+

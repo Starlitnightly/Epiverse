@@ -3,7 +3,7 @@ import json
 import zlib
 import base64
 import anndata as ad
-import pyscenic
+#import pyscenic
 import numpy as np
 import pandas as pd
 import loompy as lp
