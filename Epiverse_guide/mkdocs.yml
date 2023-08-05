@@ -9,7 +9,7 @@ nav:
 - Installation: Installation_guild.md
 - Tutorial:
     - Bulk:
-        - ATAC-seq preprocess: Tutorials-bulk/t_pp.ipynb
+        - ATAC-seq visualization: Tutorials-bulk/t_bulk_visualize.ipynb
     - Single:
         - Preprocessing the data of scATAC-seq: Tutorials-single/t_preprocess.ipynb
 

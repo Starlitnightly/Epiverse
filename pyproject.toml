@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "Epiverse"
-version = "0.0.1"
+version = "0.0.2"
 description = "EpiVerse: A single pipeline for exploring the entire epigenomics universe"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
     'omicverse>=1.4.13',
     'muon>=0.1',
+    'pyBigWig>=0.3'
 ]
 
 
