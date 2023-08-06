@@ -9,10 +9,17 @@ import re
 import os
 from scipy.sparse import csr_matrix
 import anndata
+from ._getScorePerBigWigBin import getScorePerBin
 
 sc_color=['#7CBB5F','#368650','#A499CC','#5E4D9A','#78C2ED','#866017', '#9F987F','#E0DFED',
  '#EF7B77', '#279AD7','#F0EEF0', '#1F577B', '#A56BA7', '#E0A7C8', '#E069A6', '#941456', '#FCBC10',
  '#EAEFC5', '#01A0A7', '#75C8CC', '#F0D7BC', '#D5B26C', '#D5DA48', '#B6B812', '#9DC3C3', '#A89C92', '#FEE00C', '#FEF2A1']
+
+import matplotlib.colors as mcolors
+n_bins = 100
+cmap_name = 'zebrafish_cmap'
+colors=['#5478A4','#66B979','#F8F150']
+xcmap = mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins)
 
 class bigwig(object):
     
@@ -31,6 +38,7 @@ class bigwig(object):
         self.bw_body_scores_dict={}
         self.bw_lens=len(self.bw_names)
         self.gtf=None
+        self.scoreperbindata=None
     
     def read(self):
         """
@@ -231,6 +239,133 @@ class bigwig(object):
             print('......{} body matrix can be found in bw_body_scores_dict[{}]'.format(bw_name,bw_name))
         else:
             pass
+
+    def compute_matrix_cis(self,bw_name:str,nbins:int=100,bw_type:str='TSS',
+                           cis_distance:int=2000,
+                          upstream:int=3000,downstream:int=3000):
+        """
+        Compute the enrichment matrix of TSS/TES/Body.
+
+        Arguments:
+            bw_name: the name of bigwig file need to be computed.
+            bw_type: can be set as 'TSS','TES'.
+            nbins: the number of bins.
+            cis_distance: the distance to TSS/TES.
+            upstream: the upstream of TSS/TES.
+            downstream: the downstream of TSS/TES.
+
+        """
+        print('......Computing {} matrix'.format(bw_name))
+        #nbins=100
+        features=self.gtf.loc[(self.gtf['feature']=='transcript')&(self.gtf['seqname'].str.contains('chr'))]
+        gene_list=features['gene_id'].unique()
+
+        array=pd.DataFrame(columns=[i for i in range(nbins)])
+
+        for g in tqdm(gene_list, desc='Processing genes', unit='gene'):
+            test_f=features.loc[(features['gene_id']==g)&(features['feature']=='transcript')].iloc[0]
+            chrom=test_f.seqname
+            if test_f.strand=='-':
+                tss_loc=test_f.end
+                tes_loc=test_f.start
+            else:
+                tss_loc=test_f.start
+                tes_loc=test_f.end
+            
+            tss_region_start=tss_loc-cis_distance-upstream
+            tss_region_end=tss_loc-cis_distance+downstream
+
+            tes_region_start=tes_loc+cis_distance-upstream
+            tes_region_end=tes_loc+cis_distance+downstream
+            
+            if tss_region_start<0:
+                tss_region_start=0
+            if tss_region_end>self.bw_dict[bw_name].chroms()[chrom]:
+                tss_region_end=self.bw_dict[bw_name].chroms()[chrom]
+
+            if tes_region_start<0:
+                tes_region_start=0
+            if tes_region_end>self.bw_dict[bw_name].chroms()[chrom]:
+                tes_region_end=self.bw_dict[bw_name].chroms()[chrom]
+            
+            if test_f.strand=='-':
+                if bw_type=='TSS':
+                    array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
+                                        tss_region_start,
+                                        tss_region_end, nBins=nbins,
+                                        type='mean')).astype(float)[::-1]
+                elif bw_type=='TES':
+                    array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom,
+                                                                        tes_region_start,
+                                                                        tes_region_end, nBins=nbins,
+                                                                        type='mean')).astype(float)[::-1]                                                
+            else:
+                if bw_type=='TSS':
+                    array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
+                                    tss_region_start,
+                                    tss_region_end, nBins=nbins,
+                                    type='mean')).astype(float)
+                elif bw_type=='TES':
+                    array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom,
+                                                                        tes_region_start,
+                                                                            tes_region_end, nBins=nbins,
+                                                                            type='mean')).astype(float)
+                
+        csr=csr_matrix(array.fillna(0).loc[array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
+
+        tss_adata=anndata.AnnData(csr)
+        tss_adata.obs.index=array.fillna(0).mean(axis=1).sort_values(ascending=False).index
+        tss_adata.uns['range']=[0-downstream,upstream]
+        tss_adata.uns['bins']=nbins
+
+        print('......{} matrix finished'.format(bw_name))
+        return tss_adata
+    
+    def compute_matrix_region(self,bw_name:str,region:pd.DataFrame,nbins:int=100,
+                              upstream:int=3000,downstream:int=3000):
+        
+        print('......Computing {} matrix'.format(bw_name))
+        features=region
+        gene_list=features['gene_id'].unique()
+
+        array=pd.DataFrame(columns=[i for i in range(nbins)])
+
+        for g in tqdm(gene_list, desc='Processing genes', unit='gene'):
+            test_f=features.loc[(features['gene_id']==g)&(features['feature']=='transcript')].iloc[0]
+            chrom=test_f.seqname
+
+            region_len=test_f.end-test_f.start
+            
+            tss_region_start=test_f.start+region_len//2-upstream
+            tss_region_end=test_f.start+region_len//2+downstream
+            
+            if tss_region_start<0:
+                tss_region_start=0
+            if tss_region_end>self.bw_dict[bw_name].chroms()[chrom]:
+                tss_region_end=self.bw_dict[bw_name].chroms()[chrom]
+
+            
+            if test_f.strand=='-':
+                array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
+                                        tss_region_start,
+                                        tss_region_end, nBins=nbins,
+                                        type='mean')).astype(float)[::-1]                                                                                                                        
+            else:
+                array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
+                                    tss_region_start,
+                                    tss_region_end, nBins=nbins,
+                                    type='mean')).astype(float)
+                
+        csr=csr_matrix(array.fillna(0).loc[array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
+
+        tss_adata=anndata.AnnData(csr)
+        tss_adata.obs.index=array.fillna(0).mean(axis=1).sort_values(ascending=False).index
+        tss_adata.uns['range']=[0-downstream,upstream]
+        tss_adata.uns['bins']=nbins
+
+        print('......{} matrix finished'.format(bw_name))
+        return tss_adata
+
 
     def plot_matrix(self,bw_name:str,bw_type:str='TSS',
                     figsize:tuple=(2,8),cmap:str='Greens',
@@ -532,6 +667,84 @@ class bigwig(object):
         plt.suptitle('{}:{:,}-{:,}'.format(chrom,chromstart,chromend),x=0.9,fontsize=12,horizontalalignment='right')
         plt.tight_layout()
         return fig,axes
+    
+    def getscoreperbin(self,bin_size=10000,number_thread=1,):
+        test=getScorePerBin(list(self.bw_path_dict.values()),bin_size,number_thread,
+                            out_file_for_raw_data='test.tab')
+        k=0
+        data=pd.DataFrame()
+        for _values, tempFileName in test:
+            bed_data=pd.read_csv(tempFileName,sep='\t',header=None)
+            if k==0:
+                data=bed_data
+            else:
+                data=pd.concat([data,bed_data],axis=0)
+            k+=1
+            os.remove(tempFileName)
+        data.columns=['chrom','start','end']+list(self.bw_path_dict.keys())
+        data.index=[i for i in range(data.shape[0])]
+        self.scoreperbindata=data
+        return data
+    
+    def compute_correlation(self,bw_names:list,method:str='pearson'):
+        from scipy.stats import gaussian_kde
+        score_data=self.scoreperbindata.fillna(0)
+        x=score_data[bw_names[0]].values
+        y=score_data[bw_names[1]].values
+
+        xy = np.vstack([x,y])  #  将两个维度的数据叠加
+        z = gaussian_kde(xy)(xy)  # 建立概率密度分布，并计算每个样本点的概率密度
+
+        # Sort the points by density, so that the densest points are plotted last
+        idx = z.argsort()
+        x, y, z = x[idx], y[idx], z[idx]
+        self.plot_x=x
+        self.plot_y=y
+        self.plot_z=z
+        self.plot_bw_names=bw_names
+        from scipy.stats import pearsonr
+        print('The correlation between {} and {} is {:.2}'.format(bw_names[0],bw_names[1],pearsonr(x,y)[0]))
+        print('Now you can use plot_correlation() to plot the correlation scatter plot')
+        return pearsonr(x,y)[0]
+    
+    def plot_correlation_bigwig(self,figsize=(3.5,3),
+                                cmap='',scatter_size=1,scatter_alpha=0.8,
+                                fontsize=14,title='')->tuple:
+
+        if self.scoreperbindata is None:
+            print('......Please run getscoreperbin() first')
+            return None
+        
+        from scipy.stats import pearsonr
+        fig, ax = plt.subplots(figsize=figsize)
+        if cmap=='':
+            cmap=xcmap
+        smp=ax.scatter(self.plot_x, self.plot_y,c=self.plot_z,s=scatter_size, 
+                       cmap=cmap,alpha=scatter_alpha) # c表示标记的颜色
+        ax.spines['left'].set_position(('outward', 10))
+        ax.spines['bottom'].set_position(('outward', 10))
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        ax.grid(False)
+        plt.xlim(0,20)
+        plt.ylim(0,20)
+        plt.xticks(fontsize=fontsize)
+        plt.yticks(fontsize=fontsize)
+
+        cax=plt.colorbar(smp,shrink=0.5)
+        cax.ax.set_yticks([np.min(self.plot_z),np.max(self.plot_z)])
+        cax.ax.set_yticklabels(['Low','High'],fontsize=fontsize)
+        if title=='':
+            ax.set_title('Pearson:{:.2}'.format(pearsonr(self.plot_x,self.plot_y)[0]),fontsize=fontsize)
+        else:
+            ax.set_title(title,fontsize=fontsize)
+        ax.set_xlabel(self.plot_bw_names[0],fontsize=fontsize)
+        ax.set_ylabel(self.plot_bw_names[1],fontsize=fontsize)
+
+        return fig,ax
 
 
 
@@ -555,7 +768,7 @@ def format_number_with_k(number):
                          
         
 
-def plot_matrix(adata,bw_type='TSS',
+def plot_matrix(adata,bw_type='body',
                 figsize=(2,8),cmap='Greens',
                 vmax='auto',vmin='auto',fontsize=12,title=''):
     #from mpl_toolkits.axes_grid1.inset_locator import inset_axes
