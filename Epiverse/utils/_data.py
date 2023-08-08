@@ -3,8 +3,8 @@ import time
 import requests
 
 def download_gene_annotation_file(download_file:str = ''):
-    r"""load gene_annotation_file
-
+    r"""
+    load gene_annotation_file
     """
     _datasets = {
         'chm13v2.0_RefSeq_Liftoff_v4':'https://figshare.com/ndownloader/files/40628072',
@@ -17,7 +17,20 @@ def download_gene_annotation_file(download_file:str = ''):
                                      path=os.path.join(download_file,'{}.gtf.gz'.format(datasets_name)),title=datasets_name)
     print('......Gene Annotation File download finished!')
 
-
+def download_gene_activity_reference(download_file:str = ''):
+    r"""
+    load reference data for calculating gene activity.
+    """
+    _datasets = {
+        'GRCm38_refgenes':'https://figshare.com/ndownloader/files/41910918',
+        'T2TCHM13_refgenes':'https://figshare.com/ndownloader/files/41910924'
+    }
+     
+    for datasets_name in _datasets.keys():
+        print('......Gene Annotation File download start:',datasets_name)
+        model_path = data_downloader(url=_datasets[datasets_name],
+                                     path=os.path.join(download_file,'{}.txt'.format(datasets_name)),title=datasets_name)
+    print('......Gene Annotation File download finished!')
 
 def data_downloader(url,path,title):
     r"""datasets downloader

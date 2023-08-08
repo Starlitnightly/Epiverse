@@ -35,3 +35,7 @@ mkdocstrings-python
 python-dotplot
 metatime
 tensorboard
+tables
+pyBigWig
+chardet
+deeptoolsintervals
