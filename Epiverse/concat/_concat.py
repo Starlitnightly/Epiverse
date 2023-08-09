@@ -9,16 +9,17 @@ def atac_concat_get_index(adata1,adata2):
     参数:
     adata1: 第一个数据集
     adata2: 第二个数据集
+    数据集要求必须包含'chr','chromStart'和'chromEnd'三列
 
     返回:
     pair_index: 包含计算结果的DataFrame
   """
 
   # 数据预处理
-  adata1.var.loc[:,'ATAC'] = adata1.var.index
-  adata1.var = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
-  adata2.var.loc[:,'ATAC'] = adata2.var.index
-  adata2.var = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
+  #adata1.var.loc[:,'ATAC'] = adata1.var.index
+  #adata1.var = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
+  #adata2.var.loc[:,'ATAC'] = adata2.var.index
+  #adata2.var = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
 
   # 判断是否出现 不存在某条染色体的情况，如果存在，我们希望染色体较少的一方为adata1（因为后续的分析都是针对adata1为染色体较少的情况进行分析的）
   # 如果出现adata1的染色体比adata2的染色体多，则调换位置
@@ -157,12 +158,12 @@ def atac_concat_inner(adata1,adata2,pair_index):
   del adata_2
 
   # 设置基本参数
-  adata1.var.loc[:,'ATAC'] = adata1.var.index
-  df1 = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
-  adata1.var = df1
-  adata2.var.loc[:,'ATAC'] = adata2.var.index
-  df2 = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
-  adata2.var = df2
+  #adata1.var.loc[:,'ATAC'] = adata1.var.index
+  #df1 = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
+  #adata1.var = df1
+  #adata2.var.loc[:,'ATAC'] = adata2.var.index
+  #df2 = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
+  #adata2.var = df2
 
   # 判断是否存在需要调换位置的情况
   if len(set(adata1.var.chr))>len(set(adata2.var.chr)):
@@ -224,11 +225,11 @@ def atac_concat_outer(adata1,adata2,pair_index):
   del adata_1
   del adata_2
 
-    # 提取关键参数
-  adata1.var.loc[:,'ATAC'] = adata1.var.index
-  adata1.var = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
-  adata2.var.loc[:,'ATAC'] = adata2.var.index
-  adata2.var = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
+  #  # 提取关键参数
+  #adata1.var.loc[:,'ATAC'] = adata1.var.index
+  #adata1.var = pd.DataFrame((x.split('_') for x in adata1.var['ATAC']) , index = adata1.var.index , columns = ['chr','chromStart','chromEnd'])
+  #adata2.var.loc[:,'ATAC'] = adata2.var.index
+  #adata2.var = pd.DataFrame((x.split('_') for x in adata2.var['ATAC']) , index = adata2.var.index , columns = ['chr','chromStart','chromEnd'])
 
     # 判断是否存在需要调换位置的情况
   if len(set(adata1.var.chr))>len(set(adata2.var.chr)):
@@ -287,7 +288,7 @@ def atac_concat_outer(adata1,adata2,pair_index):
   adata1.var_names_make_unique()
   adata2.var_names_make_unique()
   adata_pair = ad.concat([adata1,adata2],axis=0,join='outer',fill_value=0)
-  adata_pair.obs_names_make_unique()
+  adata_pair.var_names_make_unique()
   adata_pair.var_name = adata_pair.var.index
   adata_pair = adata_pair[:,[i for i in adata_pair.var_name if '-' not in i]]
 

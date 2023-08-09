@@ -7,6 +7,7 @@ from scipy.io import mmread
 
 def read_ATAC_10x(matrix, cell_names='', var_names='', path_file=''):
     """
+    Copy from Episcanpy
     Load sparse matrix (including matrices corresponding to 10x data) as AnnData objects.
     read the mtx file, tsv file coresponding to cell_names and the bed file containing the variable names
 
