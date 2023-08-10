@@ -8,9 +8,11 @@ import anndata as ad
 from anndata import AnnData
 import scipy.sparse
 from sklearn.preprocessing import normalize
-from .typehint import Array
 from typing import Optional
 import sklearn.utils.extmath
+from typing import Optional, Union
+
+Array = Union[np.ndarray, scipy.sparse.spmatrix]
 
 def tfidf(X: Array) -> Array:
     r"""
@@ -67,3 +69,5 @@ def lsi(
     X_lsi -= X_lsi.mean(axis=1, keepdims=True)
     X_lsi /= X_lsi.std(axis=1, ddof=1, keepdims=True)
     adata.obsm["X_lsi"] = X_lsi
+
+    
