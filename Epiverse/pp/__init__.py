@@ -1,2 +1,2 @@
-from ._scATAC_qc import *
-from ._scATAC_gene_activity import *
+from ._qc import *
+from ._gene_activity import *

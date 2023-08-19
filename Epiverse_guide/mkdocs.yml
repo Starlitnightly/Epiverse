@@ -12,6 +12,7 @@ nav:
         - ATAC-seq visualization: Tutorials-bulk/t_bulk_visualize.ipynb
     - Single:
         - Preprocessing the data of scATAC-seq: Tutorials-single/t_preprocess.ipynb
+        - Data integration: Tutorials-single/t_single_concat.ipynb
         - Calculating the gene activity matrix of scATAC-seq: Tutorials-single/t_gene_activity.ipynb
 
 

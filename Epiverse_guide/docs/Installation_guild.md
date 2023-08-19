@@ -23,6 +23,15 @@ In different platform, there are some differences in the most appropriate instal
 ### Apple silicon prerequisites
 Installing omicverse on a Mac with Apple Silicon is only possible using a native version of python. A native version of python can be installed with an Apple Silicon version of mambaforge (which can be installed from a native version of homebrew via `brew install --cask mambaforge`). 
 
+### Dev package
+
+You need to install `python3.8-dev` on linux enviroment 
+
+```shell
+sudo apt-get install python3.8-dev
+```
+
+
 ## Conda
 
 Under development
