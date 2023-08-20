@@ -40,3 +40,16 @@ def read_ATAC_10x(matrix, cell_names='', var_names='', path_file=''):
     adata.uns['omic'] = 'ATAC'
     
     return(adata)
+
+def read_gtf(gtf_path):
+    import omicverse as ov
+    import re
+    features=ov.utils.read_gtf(gtf_path)
+    pattern = re.compile(r'([^\s]+) "([^"]+)";')
+    splitted = pd.DataFrame.from_records(np.vectorize(lambda x: {
+        key: val for key, val in pattern.findall(x)
+    })(features["attribute"]), index=features.index)
+
+    features=features.assign(**splitted)
+    return pd.DataFrame(features)
+
