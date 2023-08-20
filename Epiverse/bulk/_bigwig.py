@@ -11,6 +11,7 @@ from scipy.sparse import csr_matrix
 import anndata
 from ._getScorePerBigWigBin import getScorePerBin
 
+
 sc_color=['#7CBB5F','#368650','#A499CC','#5E4D9A','#78C2ED','#866017', '#9F987F','#E0DFED',
  '#EF7B77', '#279AD7','#F0EEF0', '#1F577B', '#A56BA7', '#E0A7C8', '#E069A6', '#941456', '#FCBC10',
  '#EAEFC5', '#01A0A7', '#75C8CC', '#F0D7BC', '#D5B26C', '#D5DA48', '#B6B812', '#9DC3C3', '#A89C92', '#FEE00C', '#FEF2A1']
@@ -154,6 +155,15 @@ class bigwig(object):
             tes_array=pd.DataFrame(columns=[i for i in range(nbins)])
             body_array=pd.DataFrame(columns=[i for i in range(nbins)])
 
+            tss_region_start_li=[]
+            tss_region_end_li=[]
+
+            tes_region_start_li=[]
+            tes_region_end_li=[]
+
+            body_region_start_li=[]
+            body_region_end_li=[]
+
             for g in tqdm(gene_list, desc='Processing genes', unit='gene'):
                 test_f=features.loc[(features['gene_id']==g)&(features['feature']=='transcript')].iloc[0]
                 chrom=test_f.seqname
@@ -183,6 +193,8 @@ class bigwig(object):
                 if tes_region_end>self.bw_dict[bw_name].chroms()[chrom]:
                     tes_region_end=self.bw_dict[bw_name].chroms()[chrom]
                 
+                
+
                 if test_f.strand=='-':
                     tss_array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
                                         tss_region_start,
@@ -196,6 +208,12 @@ class bigwig(object):
                                                                             body_region_start,
                                                                                 body_region_end, nBins=nbins,
                                                                                 type='mean')).astype(float)[::-1]
+                    tss_region_start_li.append(tss_region_start)
+                    tss_region_end_li.append(tss_region_end)
+                    tes_region_end_li.append(tes_region_end)
+                    tes_region_start_li.append(tes_region_start)
+                    body_region_start_li.append(body_region_start)
+                    body_region_end_li.append(body_region_end)
                                                                           
                                                                     
                 else:
@@ -211,6 +229,13 @@ class bigwig(object):
                                                                             body_region_start,
                                                                                 body_region_end, nBins=nbins,
                                                                                 type='mean')).astype(float)
+                    tss_region_start_li.append(tss_region_start)
+                    tss_region_end_li.append(tss_region_end)
+                    tes_region_end_li.append(tes_region_end)
+                    tes_region_start_li.append(tes_region_start)
+                    body_region_start_li.append(body_region_start)
+                    body_region_end_li.append(body_region_end)
+
             tss_csr=csr_matrix(tss_array.fillna(0).loc[tss_array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
             tes_csr=csr_matrix(tes_array.fillna(0).loc[tes_array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
             body_csr=csr_matrix(body_array.fillna(0).loc[body_array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
@@ -219,16 +244,23 @@ class bigwig(object):
             tss_adata.obs.index=tss_array.fillna(0).mean(axis=1).sort_values(ascending=False).index
             tss_adata.uns['range']=[0-downstream,upstream]
             tss_adata.uns['bins']=nbins
+            tss_adata.obs['region_start']=tss_region_start_li
+            tss_adata.obs['region_end']=tss_region_end_li
 
             tes_adata=anndata.AnnData(tes_csr)
             tes_adata.obs.index=tes_array.fillna(0).mean(axis=1).sort_values(ascending=False).index
             tes_adata.uns['range']=[0-downstream,upstream]
             tes_adata.uns['bins']=nbins
+            tes_adata.obs['region_start']=tes_region_start_li
+            tes_adata.obs['region_end']=tes_region_end_li
 
             body_adata=anndata.AnnData(body_csr)
             body_adata.obs.index=body_array.fillna(0).mean(axis=1).sort_values(ascending=False).index
             body_adata.uns['range']=[0,upstream+downstream]
             body_adata.uns['bins']=nbins
+            body_adata.obs['region_start']=body_region_start_li
+            body_adata.obs['region_end']=body_region_end_li
+
 
             self.bw_tss_scores_dict[bw_name]=tss_adata
             self.bw_tes_scores_dict[bw_name]=tes_adata
@@ -261,6 +293,8 @@ class bigwig(object):
         gene_list=features['gene_id'].unique()
 
         array=pd.DataFrame(columns=[i for i in range(nbins)])
+        region_start_li=[]
+        region_end_li=[]
 
         for g in tqdm(gene_list, desc='Processing genes', unit='gene'):
             test_f=features.loc[(features['gene_id']==g)&(features['feature']=='transcript')].iloc[0]
@@ -287,6 +321,8 @@ class bigwig(object):
                 tes_region_start=0
             if tes_region_end>self.bw_dict[bw_name].chroms()[chrom]:
                 tes_region_end=self.bw_dict[bw_name].chroms()[chrom]
+
+            
             
             if test_f.strand=='-':
                 if bw_type=='TSS':
@@ -294,22 +330,31 @@ class bigwig(object):
                                         tss_region_start,
                                         tss_region_end, nBins=nbins,
                                         type='mean')).astype(float)[::-1]
+                    region_start_li.append(tss_region_start)
+                    region_end_li.append(tss_region_end)
+                    
                 elif bw_type=='TES':
                     array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom,
                                                                         tes_region_start,
                                                                         tes_region_end, nBins=nbins,
-                                                                        type='mean')).astype(float)[::-1]                                                
+                                                                        type='mean')).astype(float)[::-1]    
+                    region_start_li.append(tes_region_start)
+                    region_end_li.append(tes_region_end)                                            
             else:
                 if bw_type=='TSS':
                     array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
                                     tss_region_start,
                                     tss_region_end, nBins=nbins,
                                     type='mean')).astype(float)
+                    region_start_li.append(tss_region_start)
+                    region_end_li.append(tss_region_end)
                 elif bw_type=='TES':
                     array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom,
                                                                         tes_region_start,
                                                                             tes_region_end, nBins=nbins,
                                                                             type='mean')).astype(float)
+                    region_start_li.append(tes_region_start)
+                    region_end_li.append(tes_region_end)
                 
         csr=csr_matrix(array.fillna(0).loc[array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
 
@@ -317,6 +362,8 @@ class bigwig(object):
         tss_adata.obs.index=array.fillna(0).mean(axis=1).sort_values(ascending=False).index
         tss_adata.uns['range']=[0-downstream,upstream]
         tss_adata.uns['bins']=nbins
+        tss_adata.obs['region_start']=region_start_li
+        tss_adata.obs['region_end']=region_end_li
 
         print('......{} matrix finished'.format(bw_name))
         return tss_adata
@@ -329,6 +376,8 @@ class bigwig(object):
         gene_list=features['gene_id'].unique()
 
         array=pd.DataFrame(columns=[i for i in range(nbins)])
+        region_start_li=[]
+        region_end_li=[]
 
         for g in tqdm(gene_list, desc='Processing genes', unit='gene'):
             test_f=features.loc[(features['gene_id']==g)&(features['feature']=='transcript')].iloc[0]
@@ -349,12 +398,16 @@ class bigwig(object):
                 array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
                                         tss_region_start,
                                         tss_region_end, nBins=nbins,
-                                        type='mean')).astype(float)[::-1]                                                                                                                        
+                                        type='mean')).astype(float)[::-1]  
+                                                                                                                                   
             else:
                 array.loc[g]=np.array(self.bw_dict[bw_name].stats(chrom, 
                                     tss_region_start,
                                     tss_region_end, nBins=nbins,
                                     type='mean')).astype(float)
+            
+            region_start_li.append(tss_region_start)
+            region_end_li.append(tss_region_end)   
                 
         csr=csr_matrix(array.fillna(0).loc[array.fillna(0).mean(axis=1).sort_values(ascending=False).index].values)
 
@@ -362,6 +415,8 @@ class bigwig(object):
         tss_adata.obs.index=array.fillna(0).mean(axis=1).sort_values(ascending=False).index
         tss_adata.uns['range']=[0-downstream,upstream]
         tss_adata.uns['bins']=nbins
+        tss_adata.obs['region_start']=region_start_li
+        tss_adata.obs['region_end']=region_end_li
 
         print('......{} matrix finished'.format(bw_name))
         return tss_adata
