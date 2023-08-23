@@ -30,3 +30,9 @@ Please checkout the documentations and tutorials at [epiverse.readthedocs.io](ht
 
 - Lei Hu ([1157269262@qq.com](mailto:1157269262@qq.com), or [hulei@westlake.edu.cn](mailto:hulei@westlake.edu.cn))
 - Zehua Zeng ([starlitnightly@163.com](mailto:starlitnightly@163.com) or [zehuazeng@xs.ustb.edu.cn](mailto:zehuazeng@xs.ustb.edu.cn))
+
+## Other
+
+<div>Logo made by <a href="https://www.designevo.com/" title="Free Online Logo Maker">DesignEvo free logo creator</a></div>
+
+
