@@ -638,7 +638,7 @@ class bigwig(object):
             elif transform == 'log1p':
                 score_list=np.log1p(score_list)
             elif transform == '-log':
-                - np.log(score_list)
+                score_list =- np.log(score_list)
             else:
                 pass
             self.scores_per_bin_dict[bw_name]=score_list

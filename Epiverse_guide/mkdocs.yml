@@ -15,6 +15,7 @@ nav:
         - Data integration: Tutorials-single/t_single_concat.ipynb
         - Find the genes related regions: Tutorials-single/t_findgenes.ipynb
         - Calculating the gene activity matrix of scATAC-seq: Tutorials-single/t_gene_activity.ipynb
+        - Pseudobulk visualization: Tutorials-single/t_pseudobulk_visual.ipynb
 
 
 - API documentation: api/index.md
