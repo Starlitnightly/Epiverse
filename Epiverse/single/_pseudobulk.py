@@ -10,8 +10,6 @@ import numpy as np
 import pandas as pd
 import pyBigWig
 
-
-
 def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
                   chr=['chrom','chromStart','chromEnd'],
                bigwig_path='temp',verbose=True):
@@ -134,6 +132,14 @@ def pseudobulk_with_fragments(
             newly created bigwig files per group.
     """
 
+    # check the imported package
+    try:
+        import pyrle
+    except ImportError:
+        raise  ImportError(
+            'Please install the pyrle: `pip install pyrle`.'
+        )
+    
     # Get fragments file
     if path_to_fragments is None:
         print("Please, provide path_to_fragments.")
@@ -158,12 +164,13 @@ def pseudobulk_with_fragments(
     # Get fragments
     fragments_df_dict = {}
     for sample_id in path_to_fragments.keys():
-        if sample_id not in sample_ids:
-            print(
-                "The following path_to_fragments entry is not found in the cell metadata sample_id_col: ",
-                sample_id,
-                ". It will be ignored.",
-            )
+        if sample_id_col is not None:
+            if sample_id not in sample_ids:
+                print(
+                    "The following path_to_fragments entry is not found in the cell metadata sample_id_col: ",
+                    sample_id,
+                    ". It will be ignored.",
+                )
         else:
             if verbose: 
                 print("Reading fragments from " + path_to_fragments[sample_id])

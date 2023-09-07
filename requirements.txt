@@ -40,3 +40,4 @@ pyBigWig
 chardet
 deeptoolsintervals
 loompy
+pyrle

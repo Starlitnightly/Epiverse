@@ -1,5 +1,4 @@
 import multiprocessing
-from deeptoolsintervals import GTF
 import random
 
 debug = 0
@@ -57,6 +56,14 @@ def mapReduce(staticArgs, func, chromSize,
 
     If "includeLabels" is true, a tuple of (results, labels) is returned
     """
+
+    # check the imported package
+    try:
+        from deeptoolsintervals import GTF
+    except ImportError:
+        raise  ImportError(
+            'Please install the pyrle: `pip install deeptoolsintervals`.'
+        )
 
     if not genomeChunkLength:
         genomeChunkLength = 1e5

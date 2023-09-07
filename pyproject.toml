@@ -29,7 +29,9 @@ classifiers = [
 dependencies = [
     'omicverse>=1.4.13',
     'muon>=0.1',
-    'pyBigWig>=0.3'
+    'pyBigWig>=0.3',
+    'loompy>=3.0.7',
+    
 ]
 
 
