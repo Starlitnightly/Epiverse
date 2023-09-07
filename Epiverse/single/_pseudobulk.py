@@ -82,6 +82,7 @@ def pseudobulk_with_fragments(
     remove_duplicates: Optional[bool] = True,
     split_pattern: Optional[str] = "___",
     use_polars: Optional[bool] = True,
+    sample_id_col: Optional[str] = None,
     **kwargs
     ):
 
@@ -120,6 +121,9 @@ def pseudobulk_with_fragments(
             attempt to infer `sample_id` from the index of `input_data` and ignore `sample_id_col`.
     use_polars: bool, optional
             Whether to use polars to read fragments files. Default: True.
+        sample_id_col: str, optional
+            This parameter is not necessary.
+            Name of the column containing the sample name per barcode in the input :class:`CistopicObject.cell_data` or class:`pd.DataFrame`. Default: None.
     **kwargs
             Additional parameters for ray.init()
 
@@ -145,26 +149,42 @@ def pseudobulk_with_fragments(
     # Get fragments
     fragments_df_dict = {}
     for sample_id in path_to_fragments.keys():
-        if verbose: 
-            print("Reading fragments from " + path_to_fragments[sample_id])
-        fragments_df = read_fragments_from_file(path_to_fragments[sample_id], use_polars=use_polars).df
-        # Convert to int32 for memory efficiency
-        fragments_df.Start = np.int32(fragments_df.Start)
-        fragments_df.End = np.int32(fragments_df.End)
-        if "Score" in fragments_df:
-            fragments_df.Score = np.int32(fragments_df.Score)
-        if "barcode" in cell_data:
-            fragments_df = fragments_df.loc[
-                fragments_df["Name"].isin(cell_data["barcode"].tolist())
-            ]
+        if sample_id not in sample_ids:
+            print(
+                "The following path_to_fragments entry is not found in the cell metadata sample_id_col: ",
+                sample_id,
+                ". It will be ignored.",
+            )
         else:
-            fragments_df = fragments_df.loc[
-                fragments_df["Name"].isin(
-                    prepare_tag_cells(cell_data.index.tolist(), split_pattern)
-                )
-            ]
-        fragments_df_dict[sample_id] = fragments_df
-        print(fragments_df)
+            if verbose: 
+                print("Reading fragments from " + path_to_fragments[sample_id])
+            fragments_df = read_fragments_from_file(path_to_fragments[sample_id], use_polars=use_polars).df
+            # Convert to int32 for memory efficiency
+            fragments_df.Start = np.int32(fragments_df.Start)
+            fragments_df.End = np.int32(fragments_df.End)
+            if "Score" in fragments_df:
+                fragments_df.Score = np.int32(fragments_df.Score)
+            if "barcode" in cell_data:
+                fragments_df = fragments_df.loc[
+                    fragments_df["Name"].isin(cell_data["barcode"].tolist())
+                ]
+            else:
+                fragments_df = fragments_df.loc[
+                    fragments_df["Name"].isin(
+                        prepare_tag_cells(cell_data.index.tolist(), split_pattern)
+                    )
+                ]
+            fragments_df_dict[sample_id] = fragments_df
+            print(fragments_df)
+
+    # Process the sample_id_col(optional)
+    if sample_id_col is not None:
+        try:
+            sample_ids = list(set(cell_data[sample_id_col]))
+        except ValueError:
+            print(
+            'Please, include a sample identification column (e.g. "sample_id") in your cell metadata!'
+        )
 
     # Set groups
     if "barcode" in cell_data:
@@ -225,6 +245,7 @@ def export_pseudobulk_one_sample(
     normalize_bigwig: Optional[bool] = True,
     remove_duplicates: Optional[bool] = True,
     split_pattern: Optional[str] = "___",
+    sample_id_col: Optional[str] = None,
 ):
     """
     Create pseudobulk as bed and bigwig from single cell fragments file given a barcode annotation and a group.
@@ -250,13 +271,17 @@ def export_pseudobulk_one_sample(
             Whether duplicates should be removed before converting the data to bigwig.
     split_pattern: str
             Pattern to split cell barcode from sample id. Default: ___ .
+    sample_id_col: str, optional
+            Name of the column containing the sample name per barcode in the input :class:`CistopicObject.cell_data` or class:`pd.DataFrame`. Default: 'None'.
     """
     # Create logger
     print("Creating pseudobulk for " + str(group))
     group_fragments_list = []
     group_fragments_dict = {}
-    for sample_id in fragments_df_dict:
-        sample_data = cell_data
+
+    if sample_id_col is not None:
+        for sample_id in fragments_df_dict:
+            sample_data = cell_data[cell_data.loc[:, sample_id_col].isin([sample_id])]
         if "barcode" in sample_data:
             sample_data.index = sample_data["barcode"].tolist()
         else:
@@ -269,6 +294,22 @@ def export_pseudobulk_one_sample(
         group_fragments = fragments_df.loc[fragments_df["Name"].isin(barcodes)]
         if len(fragments_df_dict) > 1:
             group_fragments_dict[sample_id] = group_fragments
+
+    else:
+        for sample_id in fragments_df_dict:
+            sample_data = cell_data
+            if "barcode" in sample_data:
+                sample_data.index = sample_data["barcode"].tolist()
+            else:
+                sample_data.index = prepare_tag_cells(
+                    sample_data.index.tolist(), split_pattern
+                )
+            group_var = sample_data.iloc[:, 0]
+            barcodes = group_var[group_var.isin([group])].index.tolist()
+            fragments_df = fragments_df_dict[sample_id]
+            group_fragments = fragments_df.loc[fragments_df["Name"].isin(barcodes)]
+            if len(fragments_df_dict) > 1:
+                group_fragments_dict[sample_id] = group_fragments
 
     if len(fragments_df_dict) > 1:
         group_fragments_list = [

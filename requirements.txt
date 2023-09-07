@@ -39,3 +39,4 @@ tables
 pyBigWig
 chardet
 deeptoolsintervals
+loompy
