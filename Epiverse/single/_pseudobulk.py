@@ -146,6 +146,15 @@ def pseudobulk_with_fragments(
     elif clusters is not None:
         cell_data = input_data[input_data[cluster_key].isin(clusters)]
     
+    # Process the sample_id_col(optional)
+    if sample_id_col is not None:
+        try:
+            sample_ids = list(set(cell_data[sample_id_col]))
+        except ValueError:
+            print(
+            'Please, include a sample identification column (e.g. "sample_id") in your cell metadata!'
+        )
+            
     # Get fragments
     fragments_df_dict = {}
     for sample_id in path_to_fragments.keys():
@@ -176,15 +185,6 @@ def pseudobulk_with_fragments(
                 ]
             fragments_df_dict[sample_id] = fragments_df
             print(fragments_df)
-
-    # Process the sample_id_col(optional)
-    if sample_id_col is not None:
-        try:
-            sample_ids = list(set(cell_data[sample_id_col]))
-        except ValueError:
-            print(
-            'Please, include a sample identification column (e.g. "sample_id") in your cell metadata!'
-        )
 
     # Set groups
     if "barcode" in cell_data:
