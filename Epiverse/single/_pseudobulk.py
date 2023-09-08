@@ -5,7 +5,6 @@ import os
 import gzip
 from typing import Optional, Union, Dict, List
 import anndata as ad
-import pyranges as pr
 import numpy as np
 import pandas as pd
 import pyBigWig
@@ -13,6 +12,13 @@ import pyBigWig
 def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
                   chr=['chrom','chromStart','chromEnd'],
                bigwig_path='temp',verbose=True):
+    try:
+        import pyranges as pr
+    except ImportError:
+        raise  ImportError(
+            'Please install the pyrle: `pip install pyranges`.'
+        )
+
     adata.obs[cluster_key]= adata.obs[cluster_key].astype('category')
     
     if clusters==None:
@@ -129,13 +135,19 @@ def pseudobulk_with_fragments(
             A dictionary containing the paths to the newly created bed fragments files per group a dictionary containing the paths to the
             newly created bigwig files per group.
     """
-    print(path_to_fragments,'\n')  
     # check the imported package
     try:
         import pyrle
     except ImportError:
         raise  ImportError(
             'Please install the pyrle: `pip install pyrle`.'
+        )
+    
+    try:
+        import pyranges as pr
+    except ImportError:
+        raise  ImportError(
+            'Please install the pyrle: `pip install pyranges`.'
         )
     
     # Get fragments file
@@ -323,7 +335,7 @@ def export_pseudobulk_one_sample(
     print("Creating pseudobulk for " + str(group))
     group_fragments_list = []
     group_fragments_dict = {}
-
+    
 
     # test function
     print(fragments_df_dict,'\n')
