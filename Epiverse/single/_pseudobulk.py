@@ -8,16 +8,11 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 import pyBigWig
+import pyranges as pr
 
 def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
                   chr=['chrom','chromStart','chromEnd'],
                bigwig_path='temp',verbose=True):
-    try:
-        import pyranges as pr
-    except ImportError:
-        raise  ImportError(
-            'Please install the pyrle: `pip install pyranges`.'
-        )
 
     adata.obs[cluster_key]= adata.obs[cluster_key].astype('category')
     
@@ -143,12 +138,6 @@ def pseudobulk_with_fragments(
             'Please install the pyrle: `pip install pyrle`.'
         )
     
-    try:
-        import pyranges as pr
-    except ImportError:
-        raise  ImportError(
-            'Please install the pyrle: `pip install pyranges`.'
-        )
     
     # Get fragments file
     if path_to_fragments is None:
