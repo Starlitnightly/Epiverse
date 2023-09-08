@@ -65,8 +65,6 @@ def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
         del df_test
         gc.collect()
 
-
-
 def pseudobulk_with_fragments(
     input_data: Union[pd.DataFrame, ad.AnnData],
     chromsizes: Union[pd.DataFrame, pr.PyRanges],
@@ -131,7 +129,7 @@ def pseudobulk_with_fragments(
             A dictionary containing the paths to the newly created bed fragments files per group a dictionary containing the paths to the
             newly created bigwig files per group.
     """
-
+    print(path_to_fragments,'\n')  
     # check the imported package
     try:
         import pyrle
@@ -171,6 +169,25 @@ def pseudobulk_with_fragments(
                     sample_id,
                     ". It will be ignored.",
                 )
+            if verbose: 
+                print("Reading fragments from " + path_to_fragments[sample_id])
+            fragments_df = read_fragments_from_file(path_to_fragments[sample_id], use_polars=use_polars).df
+            # Convert to int32 for memory efficiency
+            fragments_df.Start = np.int32(fragments_df.Start)
+            fragments_df.End = np.int32(fragments_df.End)
+            if "Score" in fragments_df:
+                fragments_df.Score = np.int32(fragments_df.Score)
+            if "barcode" in cell_data:
+                fragments_df = fragments_df.loc[
+                    fragments_df["Name"].isin(cell_data["barcode"].tolist())
+                ]
+            else:
+                fragments_df = fragments_df.loc[
+                    fragments_df["Name"].isin(
+                        prepare_tag_cells(cell_data.index.tolist(), split_pattern)
+                    )
+                ]
+            fragments_df_dict[sample_id] = fragments_df
         else:
             if verbose: 
                 print("Reading fragments from " + path_to_fragments[sample_id])
@@ -194,10 +211,16 @@ def pseudobulk_with_fragments(
             print(fragments_df)
 
     # Set groups
-    if "barcode" in cell_data:
-        cell_data = cell_data.loc[:, [cluster_key, "barcode"]]
+    if sample_id_col is not None:
+        if "barcode" in cell_data:
+            cell_data = cell_data.loc[:, [cluster_key,sample_id_col,"barcode"]]
+        else:
+            cell_data = cell_data.loc[:, [cluster_key,sample_id_col]]
     else:
-        cell_data = cell_data.loc[:, [cluster_key]]
+        if "barcode" in cell_data:
+            cell_data = cell_data.loc[:, [cluster_key, "barcode"]]
+        else:
+            cell_data = cell_data.loc[:, [cluster_key]]
     cell_data[cluster_key] = cell_data[cluster_key].replace(" ", "", regex=True)
     cell_data[cluster_key] = cell_data[cluster_key].replace("[^A-Za-z0-9]+", "_", regex=True)
     groups = sorted(list(set(cell_data[cluster_key])))
@@ -226,7 +249,8 @@ def pseudobulk_with_fragments(
 
     # Get pseudobulk from different celltypes
     for group in groups:
-        export_pseudobulk_one_sample(
+        if sample_id_col is not None:
+            export_pseudobulk_one_sample(
                 cell_data,
                 group,
                 fragments_df_dict,
@@ -235,7 +259,21 @@ def pseudobulk_with_fragments(
                 bed_path,
                 normalize_bigwig,
                 remove_duplicates,
-                split_pattern, )
+                split_pattern,
+                sample_id_col,
+                )
+        else:
+            export_pseudobulk_one_sample(
+                cell_data,
+                group,
+                fragments_df_dict,
+                chromsizes,
+                bigwig_path,
+                bed_path,
+                normalize_bigwig,
+                remove_duplicates,
+                split_pattern,
+                 )
         
 
 r"""
@@ -286,21 +324,25 @@ def export_pseudobulk_one_sample(
     group_fragments_list = []
     group_fragments_dict = {}
 
+
+    # test function
+    print(fragments_df_dict,'\n')
+    
     if sample_id_col is not None:
         for sample_id in fragments_df_dict:
             sample_data = cell_data[cell_data.loc[:, sample_id_col].isin([sample_id])]
-        if "barcode" in sample_data:
-            sample_data.index = sample_data["barcode"].tolist()
-        else:
-            sample_data.index = prepare_tag_cells(
-                sample_data.index.tolist(), split_pattern
-            )
-        group_var = sample_data.iloc[:, 0]
-        barcodes = group_var[group_var.isin([group])].index.tolist()
-        fragments_df = fragments_df_dict[sample_id]
-        group_fragments = fragments_df.loc[fragments_df["Name"].isin(barcodes)]
-        if len(fragments_df_dict) > 1:
-            group_fragments_dict[sample_id] = group_fragments
+            if "barcode" in sample_data:
+                sample_data.index = sample_data["barcode"].tolist()
+            else:
+                sample_data.index = prepare_tag_cells(
+                    sample_data.index.tolist(), split_pattern
+               )
+            group_var = sample_data.iloc[:, 0]
+            barcodes = group_var[group_var.isin([group])].index.tolist()
+            fragments_df = fragments_df_dict[sample_id]
+            group_fragments = fragments_df.loc[fragments_df["Name"].isin(barcodes)]
+            if len(fragments_df_dict) > 1:
+                group_fragments_dict[sample_id] = group_fragments
 
     else:
         for sample_id in fragments_df_dict:
