@@ -324,11 +324,7 @@ def export_pseudobulk_one_sample(
     print("Creating pseudobulk for " + str(group))
     group_fragments_list = []
     group_fragments_dict = {}
-    
 
-    # test function
-    print(fragments_df_dict,'\n')
-    
     if sample_id_col is not None:
         for sample_id in fragments_df_dict:
             sample_data = cell_data[cell_data.loc[:, sample_id_col].isin([sample_id])]
