@@ -104,7 +104,7 @@ def data_downloader(url,path,title):
     size = 0
     res = requests.get(url, stream=True)
 
-    chunk_size = 1024000
+    chunk_size = 102400
     content_size = int(res.headers["content-length"]) 
     if res.status_code == 200:
         print('......[%s Size of file]: %0.2f MB' % (title, content_size/chunk_size/10.24))
