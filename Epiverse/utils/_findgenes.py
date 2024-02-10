@@ -436,7 +436,7 @@ class Annotation(object):
             #print('downdistal',res_now_len,res_li)
             merge_pd.loc[f"{self.chrom}:{interval1[0]}-{interval1[1]}"]=res_li
 
-
+        merge_pd=merge_pd[~merge_pd.index.duplicated(keep="first")]
         return merge_pd
 
     #multi process to merge using multiprocessing
