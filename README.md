@@ -18,13 +18,19 @@ Epiverse is the fundamental package for single cell Assay for Transposase-Access
 
 ## Where to get it
 
-Epiverse can be installed via pypi and you need to install `omicverse` at first. Please refer to the [installation tutorial](https://epiverse.readthedocs.io/en/latest/Installation_guild/) for more detailed installation steps and adaptations for different platforms (`Windows`, `Linux` or `Mac OS`).
+Epiverse can be installed via pypi and you need to install `epiverse` at first. Please refer to the [installation tutorial](https://epiverse.readthedocs.io/en/latest/Installation_guild/) for more detailed installation steps and adaptations for different platforms (`Windows`, `Linux` or `Mac OS`).
 
 You can use  `pip install -U epiverse` for installation.
 
 ## Usage
 
 Please checkout the documentations and tutorials at [epiverse.readthedocs.io](https://epiverse.readthedocs.io/en/latest/).
+
+## Reference
+- [1] [Scanpy](https://github.com/scverse/scanpy) was originally published in [*Genome biology*](https://link.springer.com/article/10.1186/s13059-017-1382-0)
+- [1] [Episcanpy](https://github.com/colomemaria/epiScanpy) was originally published in [*Nature Communications*](https://www.nature.com/articles/s41467-021-25131-3)
+- [1] [SnapATAC2](https://github.com/kaizhang/SnapATAC2) was originally published in [*biorxiv*](https://doi.org/10.1101/2023.09.11.557221)
+
 
 ## Contact
 
