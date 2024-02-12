@@ -13,6 +13,10 @@ import pyranges as pr
 def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
                   chr=['chrom','chromStart','chromEnd'],
                bigwig_path='temp',verbose=True):
+    import pyrle
+    if pyrle.__version__>'0.0.38':
+        print('You need to use `pip install pyrle==0.0.38`')
+        return
 
     adata.obs[cluster_key]= adata.obs[cluster_key].astype('category')
     
