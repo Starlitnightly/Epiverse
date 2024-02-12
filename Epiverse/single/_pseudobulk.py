@@ -23,13 +23,13 @@ def pseudobulk(adata,chromsizes,size=None,cluster_key='celltype',clusters=None,
     if clusters==None:
         clusters=adata.obs[cluster_key].cat.categories
     print(clusters)
-    for celltype in clusters:
+    for celltype in tqdm(clusters):
         adata_test=adata[adata.obs[cluster_key]==celltype]
         if (size!=None) and (adata_test.shape[0]>size) :
             import random 
             cell_idx=random.sample(adata_test.obs.index.tolist(),size)
             adata_test=adata_test[cell_idx]
-            print(celltype,f'random select {size} cells')
+            #print(celltype,f'random select {size} cells')
             gc.collect()
         df_test=pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'Name', 'Score'])
         if verbose:
