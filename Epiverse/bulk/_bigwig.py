@@ -602,6 +602,7 @@ class bigwig(object):
                    color_dict=None,region_dict=None,
                    gtf_color:str='#000000',prefered_name:str='gene_id',
                    jump_symbols=['ENSG'],text_fontsize=12,text_height=1.5,
+                   show_text='ylabel',
                    ymax=None)->tuple:
         
         """
@@ -646,6 +647,7 @@ class bigwig(object):
                 #score_list[score_list < 0] = 0
             else:
                 pass
+            np.nan_to_num(score_list,0)
             self.scores_per_bin_dict[bw_name]=score_list
 
 
@@ -693,9 +695,13 @@ class bigwig(object):
             #ax.set_xticklabels([start_region,chromEnd],fontsize=11)
             ax.set_yticklabels([])
             ax.set_xticklabels([],fontsize=11)
-            ax.set_ylabel(plot_name,fontsize=12)
+            if show_text=='ylabel':
+                ax.set_ylabel(plot_name,fontsize=12)
+    
             if ymax!=None:
                 ax.set_ylim(0,ymax)
+                if show_text=='rowlabel':
+                    ax.text(chromstart,ymax*0.5,plot_name,fontsize=text_fontsize)
 
             if region_dict is not None:
                 for region in region_dict:
