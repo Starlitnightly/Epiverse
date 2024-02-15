@@ -749,7 +749,7 @@ class bigwig(object):
             ax.axis('off')
         
         plt.suptitle('{}:{:,}-{:,}'.format(chrom,chromstart,chromend),x=0.9,fontsize=12,horizontalalignment='right')
-        plt.tight_layout()
+        #plt.tight_layout()
         return fig,axes
     
     def getscoreperbin(self,bin_size=10000,number_thread=1,):
@@ -954,3 +954,29 @@ def plot_matrix_line(adata,bw_type='TSS',
     plt.tight_layout()
     plt.title(title,fontsize=fontsize)
     return fig,ax  
+
+
+class plotloc(object):
+    def __init__(self,chrom,start,end):
+        self.chr=chrom
+        self.start=int(start)
+        self.end=int(end)
+        self.length=int(end)-int(start)
+        #print(self.length)
+        self.length_len=len(str(int(self.length)))
+        #print(self.length_len)
+        
+    def cal_start(self):
+        #print((np.power(10,self.length_len)))
+        new_start=(self.start//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        return new_start
+        
+    def cal_end(self):
+        new_end=(self.end//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        return new_end
+    
+    def cal(self):
+        new_start=(self.start//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        new_end=(self.end//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        le=new_end-new_start
+        return new_start-le,new_end+le
