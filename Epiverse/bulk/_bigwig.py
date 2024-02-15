@@ -600,7 +600,10 @@ class bigwig(object):
                    value_type:str='mean',transform:str='no',
                    figwidth:int=6,figheight:int=1,plot_names=None,
                    color_dict=None,region_dict=None,
-                   gtf_color:str='#000000',prefered_name:str='gene_id')->tuple:
+                   gtf_color:str='#000000',prefered_name:str='gene_id',
+                   jump_symbols=['ENSG'],text_fontsize=12,text_height=1.5,
+                   show_text='ylabel',
+                   ymax=None)->tuple:
         
         """
         Plot the peak track of bigwig file.
@@ -635,12 +638,16 @@ class bigwig(object):
             
             if transform in ['log', 'log2', 'log10']:
                 score_list=eval('np.' + transform + '(score_list)')
+                #score_list[score_list < 0] = 0
             elif transform == 'log1p':
                 score_list=np.log1p(score_list)
+                #score_list[score_list < 0] = 0
             elif transform == '-log':
                 score_list =- np.log(score_list)
+                #score_list[score_list < 0] = 0
             else:
                 pass
+            np.nan_to_num(score_list,0)
             self.scores_per_bin_dict[bw_name]=score_list
 
 
@@ -688,7 +695,13 @@ class bigwig(object):
             #ax.set_xticklabels([start_region,chromEnd],fontsize=11)
             ax.set_yticklabels([])
             ax.set_xticklabels([],fontsize=11)
-            ax.set_ylabel(plot_name,fontsize=12)
+            if show_text=='ylabel':
+                ax.set_ylabel(plot_name,fontsize=12)
+    
+            if ymax!=None:
+                ax.set_ylim(0,ymax)
+                if show_text=='rowlabel':
+                    ax.text(chromstart,ymax*0.5,plot_name,fontsize=text_fontsize)
 
             if region_dict is not None:
                 for region in region_dict:
@@ -697,17 +710,33 @@ class bigwig(object):
         if self.gtf is not None:
             ax=axes[-1]
             goal_gtf1=self.gtf.loc[(self.gtf['seqname']==chrom)&(self.gtf['start']>chromstart)&(self.gtf['end']<chromend)]
+            have_plot_text=[]
             for i in range(len(goal_gtf1)):
                 plot_obj=goal_gtf1.iloc[i]
                 if plot_obj.feature=='transcript':
                     plt.hlines(y=1,xmin=plot_obj.start,xmax=plot_obj.end, color=gtf_color, linewidth=2)
                     gene_attr=plot_obj.attribute
                     plot_text=''
-                    for g in gene_attr:
+                    jump_t=False
+                    for g in gene_attr.split(';'):
                         if prefered_name in g:
-                            plot_text=g.replace(prefered_name,'').replace('\"','')
-                    
-                    ax.text(plot_obj.end,1,plot_text,fontsize=12)
+                            for jump_symbol in jump_symbols:
+                                if jump_symbol in g:
+                                    plot_text=''
+                                    jump_t=True
+                                    break
+                            if jump_t==False:
+                                plot_text=g.replace(prefered_name,'').replace('\"','')
+                                    
+                            
+                    if plot_text not in have_plot_text:
+                        if plot_obj.strand=='+':
+                            ax.text(plot_obj.start,text_height,plot_text,fontsize=text_fontsize)
+                        else:
+                            ax.text(plot_obj.end,text_height,plot_text,fontsize=text_fontsize)
+                        have_plot_text.append(plot_text)
+                    else:
+                        pass
                 elif plot_obj.feature=='exon':
                     rect = plt.Rectangle((plot_obj.start,0.5),plot_obj.end-plot_obj.start,1,
                                         facecolor=gtf_color,alpha=0.5)

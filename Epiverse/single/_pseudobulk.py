@@ -10,17 +10,27 @@ import pandas as pd
 import pyBigWig
 import pyranges as pr
 
-def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
+def pseudobulk(adata,chromsizes,size=None,cluster_key='celltype',clusters=None,
                   chr=['chrom','chromStart','chromEnd'],
                bigwig_path='temp',verbose=True):
+    import pyrle
+    if pyrle.__version__>'0.0.38':
+        print('You need to use `pip install pyrle==0.0.38`')
+        return
 
     adata.obs[cluster_key]= adata.obs[cluster_key].astype('category')
     
     if clusters==None:
         clusters=adata.obs[cluster_key].cat.categories
     print(clusters)
-    for celltype in clusters:
+    for celltype in tqdm(clusters):
         adata_test=adata[adata.obs[cluster_key]==celltype]
+        if (size!=None) and (adata_test.shape[0]>size) :
+            import random 
+            cell_idx=random.sample(adata_test.obs.index.tolist(),size)
+            adata_test=adata_test[cell_idx]
+            #print(celltype,f'random select {size} cells')
+            gc.collect()
         df_test=pd.DataFrame(columns=['Chromosome', 'Start', 'End', 'Name', 'Score'])
         if verbose:
             print(celltype,'chr_value')
@@ -64,6 +74,7 @@ def pseudobulk(adata,chromsizes,cluster_key='celltype',clusters=None,
         #return df_test
         del group_pr
         del df_test
+        del adata_test
         gc.collect()
 
 def pseudobulk_with_fragments(
