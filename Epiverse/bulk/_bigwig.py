@@ -598,7 +598,7 @@ class bigwig(object):
         
     def plot_track(self,chrom:str,chromstart:int,chromend:int,nbins:int=700,
                    value_type:str='mean',transform:str='no',
-                   figwidth:int=6,figheight:int=1,plot_names=None,
+                   figwidth:int=6,figheight:int=6,plot_names=None,
                    color_dict=None,region_dict=None,
                    gtf_color:str='#000000',prefered_name:str='gene_id',
                    jump_symbols=['ENSG'],text_fontsize=12,text_height=1.5,
@@ -622,6 +622,9 @@ class bigwig(object):
             region_dict: the region of interest.
             gtf_color: the color of gtf.
             prefered_name: the prefered name of gtf.
+            jump_symbols: If the gene name contains characters within list, the text for that gene is not displayed.
+            ymax: Since there are differences in our bigwig files for each type of cell, we can specify the maximum value to ensure a high degree of consistency when visualising.
+            text_fontsize: the fontsize of text in figures
 
         Returns:
             fig: the figure object.
@@ -662,6 +665,8 @@ class bigwig(object):
             bw_lens=self.bw_lens
         else:
             bw_lens=self.bw_lens+1
+
+        figheight=figheight/len(self.bw_names)
 
         fig, axes = plt.subplots(bw_lens,1,figsize=(figwidth,bw_lens*figheight))
         if plot_names is None:
@@ -749,7 +754,7 @@ class bigwig(object):
             ax.axis('off')
         
         plt.suptitle('{}:{:,}-{:,}'.format(chrom,chromstart,chromend),x=0.9,fontsize=12,horizontalalignment='right')
-        plt.tight_layout()
+        #plt.tight_layout()
         return fig,axes
     
     def getscoreperbin(self,bin_size=10000,number_thread=1,):
@@ -954,3 +959,29 @@ def plot_matrix_line(adata,bw_type='TSS',
     plt.tight_layout()
     plt.title(title,fontsize=fontsize)
     return fig,ax  
+
+
+class plotloc(object):
+    def __init__(self,chrom,start,end):
+        self.chr=chrom
+        self.start=int(start)
+        self.end=int(end)
+        self.length=int(end)-int(start)
+        #print(self.length)
+        self.length_len=len(str(int(self.length)))
+        #print(self.length_len)
+        
+    def cal_start(self):
+        #print((np.power(10,self.length_len)))
+        new_start=(self.start//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        return new_start
+        
+    def cal_end(self):
+        new_end=(self.end//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        return new_end
+    
+    def cal(self):
+        new_start=(self.start//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        new_end=(self.end//(np.power(10,self.length_len-1)))*(np.power(10,self.length_len-1))
+        le=new_end-new_start
+        return new_start-le,new_end+le
