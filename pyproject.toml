@@ -12,8 +12,8 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Lei Hu", email = "1157269262@qq.com"},
     {name = "Zehua Zeng", email = "starlitnightly@163.com"},
+    {name = "Lei Hu", email = "1157269262@qq.com"},
 ]
 keywords = ["bioinformatics", "deep-learning", "single-cell", "ATAC-seq"]
 classifiers = [
@@ -32,14 +32,21 @@ dependencies = [
     'pyBigWig>=0.3',
     'loompy>=3.0.7',
     'pyrange',
-    
+]
+
+[project.optional-dependencies]
+full = [
+  "MOODS-python",
+  "pysam",
+  "pynndescent",
+  "pyjaspar"
+
 ]
 
 
 
-
 [project.urls]
-Github = 'https://github.com/DBinary/Epiverse'
+Github = 'https://github.com/Starlitnightly/Epiverse'
 
 [tool.flit.sdist]
 exclude = [".*", "d*", "e*", "pa*", "s*", "t*"]
