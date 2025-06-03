@@ -25,6 +25,19 @@ def pseudobulk(adata,chromsizes,size=None,cluster_key='celltype',clusters=None,
     print(clusters)
     for celltype in tqdm(clusters):
         adata_test=adata[adata.obs[cluster_key]==celltype]
+        
+        # Check if there are any cells for this celltype
+        if adata_test.shape[0] == 0:
+            if verbose:
+                print(f"Skipping {celltype}: no cells found")
+            continue
+            
+        # Check if there are any features
+        if adata_test.shape[1] == 0:
+            if verbose:
+                print(f"Skipping {celltype}: no features found")
+            continue
+            
         if (size!=None) and (adata_test.shape[0]>size) :
             import random 
             cell_idx=random.sample(adata_test.obs.index.tolist(),size)
@@ -61,6 +74,12 @@ def pseudobulk(adata,chromsizes,size=None,cluster_key='celltype',clusters=None,
         df_test['Score']=adata_test.to_df().T.values.reshape(-1)
         gc.collect()
         df_test.index=np.arange(df_test.shape[0])
+        
+        # Check if the resulting DataFrame is empty before creating PyRanges
+        if df_test.shape[0] == 0:
+            if verbose:
+                print(f"Skipping {celltype}: no data to write")
+            continue
         
         if verbose:
             print(celltype,'write')

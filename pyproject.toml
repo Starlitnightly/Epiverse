@@ -5,14 +5,14 @@ build-backend = "flit_core.buildapi"
 
 
 [project]
-name = "Epiverse"
-version = "0.0.2"
+name = "epiverse"
+version = "0.0.3rc1"
 description = "EpiVerse: A single pipeline for exploring the entire epigenomics universe"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Zehua Zeng", email = "starlitnightly@163.com"},
+    {name = "Zehua Zeng", email = "starlitnightly@gmail.com"},
     {name = "Lei Hu", email = "1157269262@qq.com"},
 ]
 keywords = ["bioinformatics", "deep-learning", "single-cell", "ATAC-seq"]
@@ -46,7 +46,7 @@ full = [
 
 
 [project.urls]
-Github = 'https://github.com/Starlitnightly/Epiverse'
+Github = 'https://github.com/Starlitnightly/epiverse'
 
 [tool.flit.sdist]
 exclude = [".*", "d*", "e*", "pa*", "s*", "t*"]
