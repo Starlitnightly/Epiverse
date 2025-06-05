@@ -602,7 +602,7 @@ class bigwig(object):
                    color_dict=None,region_dict=None,
                    gtf_color:str='#000000',prefered_name:str='gene_id',
                    jump_symbols=['ENSG'],text_fontsize=12,text_height=1.5,
-                   show_text='ylabel',
+                   show_text='ylabel',text_rotation=0,
                    ymax=None)->tuple:
         
         """
@@ -706,7 +706,14 @@ class bigwig(object):
             if ymax!=None:
                 ax.set_ylim(0,ymax)
                 if show_text=='rowlabel':
-                    ax.text(chromstart,ymax*0.5,plot_name,fontsize=text_fontsize)
+                    ax.text(chromstart,
+                            ymax*0.5,
+                            plot_name,
+                            fontsize=text_fontsize,
+                            rotation=text_rotation
+                            )
+                else:
+                    pass
 
             if region_dict is not None:
                 for region in region_dict:
